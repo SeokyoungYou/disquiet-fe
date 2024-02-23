@@ -1,7 +1,15 @@
 "use client";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
+
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -16,6 +24,8 @@ import {
 import { Input } from "@/components/ui/input";
 import OptionItem from "./_components/OptionItem";
 import { Plus, X } from "lucide-react";
+
+const SELECTOR_ITEMS = ["1주", "2주", "3주", "1달"];
 
 const formSchema = z.object({
   question: z.string().min(2).max(50),
@@ -38,7 +48,17 @@ export default function Home() {
   const handleOptionChange = (index: number, value: string) => {
     const newOptions = [...form.getValues("options")];
     newOptions[index] = value;
-    form.setValue("options", newOptions); // Update the options in the form state
+    form.setValue("options", newOptions);
+  };
+
+  const handleAddOption = () => {
+    const newOptions = [...form.getValues("options"), ""];
+    form.setValue("options", newOptions);
+  };
+
+  const handleRemoveOption = (index: number) => {
+    const newOptions = form.getValues("options").filter((_, i) => i !== index);
+    form.setValue("options", newOptions);
   };
 
   function onSubmit(values: z.infer<typeof formSchema>) {
@@ -46,8 +66,8 @@ export default function Home() {
   }
 
   return (
-    <main className="p-8">
-      <span>투표 생성하기</span>
+    <main className="p-8 flex flex-col gap-8">
+      <span className="font-bold text-2xl">투표 생성하기</span>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
           <FormField
@@ -55,7 +75,7 @@ export default function Home() {
             name="question"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>질문</FormLabel>
+                <FormLabel className={subtitle}>질문</FormLabel>
                 <FormControl>
                   <Input
                     placeholder="예시) 어떤 개발 언어를 사용하시나요?"
@@ -67,30 +87,59 @@ export default function Home() {
               </FormItem>
             )}
           />
-          <ul className="flex flex-col gap-4">
-            <label>답변</label>
+          <ul className="flex flex-col gap-4 ">
+            <label className={subtitle}>답변</label>
             {form.watch("options").map((option, index) => (
               <li key={index} className="flex items-center gap-4">
                 <span>{`옵션 ${index + 1}`}</span>
                 <OptionItem
                   option={option}
                   index={index}
-                  onChange={handleOptionChange} // Pass the handler to each OptionItem
+                  onChange={handleOptionChange}
                 />
-                <X width={16} height={16} />
+                <button
+                  onClick={() => handleRemoveOption(index)}
+                  aria-label="Remove option"
+                >
+                  <X width={16} height={16} />{" "}
+                </button>
               </li>
             ))}
-            <Button type="submit">
-              <Plus width={16} height={16} className=" text-white" />
-              옵션 추가하기
+            <Button onClick={handleAddOption} type="button">
+              <Plus width={16} height={16} className="text-white" /> 옵션
+              추가하기
             </Button>
           </ul>
-          <Button type="submit">투표 생성하기</Button>
+          <section>
+            <span className={subtitle}>세부 설정</span>
+            <div>
+              <Controller
+                name="period"
+                control={form.control}
+                render={({ field }) => (
+                  <Select {...field} defaultValue={form.getValues("period")}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="기간 선택" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {SELECTOR_ITEMS.map((item) => (
+                        <SelectItem key={item} value={item}>
+                          {item}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+            </div>
+          </section>
+          <Button type="submit" className="w-full">
+            투표 생성하기
+          </Button>
         </form>
       </Form>
-      <section>
-        <span>질문</span>
-      </section>
     </main>
   );
 }
+
+const subtitle = "text-gray-500";
